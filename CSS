@@ -1,0 +1,105 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.emmaculate.githubio">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application
+        android:allowBackup="true"
+        android:label="Emmaculate"
+        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+```
+
+---
+
+### 2. The App Layout (`activity_main.xml`)
+This defines the screen. We use a `SwipeRefreshLayout` so you can pull down to refresh your website just like in Chrome.
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/swipeRefresh"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+```
+
+---
+
+### 3. The App Logic (`MainActivity.kt`)
+This code configures the browser settings so your **Matrix background** and **Neon Cursor** work correctly inside the app.
+
+```kotlin
+package com.emmaculate.githubio
+
+import android.os.Bundle
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.appcompat.app.AppCompatActivity
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var myWebView: WebView
+    private lateinit var swipeRefresh: SwipeRefreshLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        myWebView = findViewById(R.id.webView)
+        swipeRefresh = findViewById(R.id.swipeRefresh)
+
+        // Webview Settings
+        val webSettings: WebSettings = myWebView.settings
+        webSettings.javaScriptEnabled = true // Required for your animations
+        webSettings.domStorageEnabled = true // Required for site data
+        webSettings.useWideViewPort = true
+        webSettings.loadWithOverviewMode = true
+
+        // Force links to stay inside the app
+        myWebView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                swipeRefresh.isRefreshing = false
+            }
+        }
+
+        // Load your specific URL
+        myWebView.loadUrl("https://emmaculate.github.io")
+
+        // Setup Pull-to-Refresh
+        swipeRefresh.setOnRefreshListener {
+            myWebView.reload()
+        }
+    }
+
+    // If you press the back button, go back in web history instead of closing the app
+    override fun onBackPressed() {
+        if (myWebView.canGoBack()) {
+            myWebView.goBack()
+        } else {
+            super.onBackPressed()
+        }
+    }
+}
